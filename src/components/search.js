@@ -1,28 +1,55 @@
-import React from 'react';
+import React,{useState} from 'react';
+import * as BooksAPI from '../BooksAPI'
+const SearchPage = (props)=>{
 
-const searchPage = (props)=>{
+  const [books,setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
 
+ const searchBooksHandler=(query)=>{
+  const timer = setTimeout(() => {
+    setLoading(true)
+   BooksAPI.search(query)
+   .then(resData=>{
+     console.log(resData)
+     setBooks(resData)
+     setLoading(false)
+  
+   }).catch(err=>{
+     console.log(err)
+     setLoading(false)
+   })
+  },500)
+  return () => {
+    clearTimeout(timer);
+  };
+
+  }
 
 const setShelf=(event,book)=>{
     let updatedShelf= event.target.value
-    props.changeShelf(book,updatedShelf)
+    console.log(book)
+    props.addNewBook(book,updatedShelf)
     
-
 }
 
 const inputChangedHandler = (event)=>{
 
     let query = event.target.value;
-    props.searchBooks(query)
+    searchBooksHandler(query)
 
     
 }
 
-let books = <h2>No result</h2>
+let searchedBooks = <h2>No result</h2>
 
-if (props.books && props.books.length>0)
+if(loading)
 {
-  books = props.books.map(book=>
+  searchedBooks= <h2>Loading...</h2>
+}
+
+if (books &&books.length>0)
+{
+  searchedBooks = books.map(book=>
     {
     return(
     <li key={book.id} >
@@ -30,13 +57,14 @@ if (props.books && props.books.length>0)
       <div className="book-top" >
         <div  className="book-cover" style={{ width: 128, height: 192, backgroundImage: `url(${book.imageLinks.smallThumbnail})` }}></div>
         <div   className="book-shelf-changer">
-          <select value={book.shelf} onChange={(event)=>setShelf(event,book)}>
-            <option value="move" disabled>Move to...</option>
-            <option value="currentlyReading">Currently Reading</option>
-            <option value="wantToRead">Want to Read</option>
-            <option value="read">Read</option>
-            <option value="none">None</option>
-          </select>
+        <select value={book.shelf || 'none'} onChange={(event)=>setShelf(event,book)} >
+                <option value="move" disabled>Move to...</option>
+                <option  value="currentlyReading">Currently Reading</option>
+                <option value="wantToRead">Want to Read</option>
+              
+                <option value="read">Read</option>
+                <option value="none">None</option>
+              </select>
         </div>
       </div>
       <div className="book-title">{book.title}</div>
@@ -71,7 +99,7 @@ if (props.books && props.books.length>0)
         </div>
         <div className="search-books-results">
           <ol className="books-grid">
-              {books}
+              {searchedBooks}
           </ol>
         </div>
       </div>
@@ -79,4 +107,4 @@ if (props.books && props.books.length>0)
 }
 
 
-export default searchPage
+export default SearchPage

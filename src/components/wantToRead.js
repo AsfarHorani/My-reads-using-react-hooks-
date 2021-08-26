@@ -12,7 +12,7 @@ const wantToRead=(props)=>{
 
     }
    
-    if (props.books)
+    if (props.books && props.books.length >0 )
     {
       books = props.books.map(book=>(
         <li key={book.id}>

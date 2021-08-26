@@ -1,113 +1,96 @@
-import React from 'react'
+import React, { useEffect, useState  } from 'react'
+import { useHistory } from 'react-router-dom';
  import * as BooksAPI from './BooksAPI'
 import './App.css'
 import Search from './components/search';
-import {Route, Switch, withRouter} from 'react-router-dom'
+import {Route, Switch} from 'react-router-dom'
 import Home from  './components/home'
 
-class BooksApp extends React.Component {
-  state = {
-    /**
-     * TODO: Instead of using this state variable to keep track of which page
-     * we're on, use the URL in the browser's address bar. This will ensure that
-     * users can use the browser's back and forward buttons to navigate between
-     * pages, as well as provide a good URL they can bookmark and share.
-     */
-    currentlyReading:[],
-    wantToRead:[],
-    read:[],
-    searchResult:[],
-   // showSearchPage: false,
-    loading: false
-  }
 
-  searchBooksHandler=(query)=>{
-   BooksAPI.search(query)
-   .then(resData=>{
-     console.log(resData)
-    this.setState({searchResult: resData})
-   })
-  }
-  getAllBooks(){
-    this.setState({loading: true})
+
+const BooksApp = props => {
+  const history = useHistory();
+  const [books,setBooks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+
+  useEffect(() => {
+    console.log('Rendering App...')
+    getAllBooks()
+  }, []);
+
+
+
+
+
+
+  const  getAllBooks=()=>{
+    setLoading(true)
     BooksAPI.getAll()
     .then(books=>{
-      this.setState({loading: false})
-      console.log(books)
-      books.forEach(book => {
-      
-       if(book.shelf==='currentlyReading'){
-  
-         this.setState(prevState=>{
-           let updatedShelf = [...prevState.currentlyReading]
-           updatedShelf = updatedShelf.concat(book);
-          
-           return{
-             currentlyReading: updatedShelf
-           }
-         })
-       }else if(book.shelf==='wantToRead')
-       {
-        this.setState(prevState=>{
-          let updatedShelf = [...prevState.wantToRead]
-          updatedShelf = updatedShelf.concat(book);
-         
-          return{
-            wantToRead: updatedShelf
-          }
-        })
-       }else if(book.shelf==='read')
-       {
-        this.setState(prevState=>{
-          let updatedShelf = [...prevState.read]
-          updatedShelf = updatedShelf.concat(book);
-         
-          return{
-            read: updatedShelf
-          }
-        })
-       }
-      });
-      
+      setLoading(false)
+    
+      setBooks(books)
     }).catch(err=>{
+      setLoading(false)
       console.log(err)
     })
   }
+
+
+
+const addNewBook=(book,shelf)=>{
+  console.log(shelf)
+  BooksAPI.update(book,shelf)
   
-componentDidMount(){
-  this.getAllBooks()
+  .then(resData=>{
+    
+    console.log(resData)
+    getAllBooks()
+   
+  })
+  .catch(err=>{
+    console.log(err)
+  })
 }
 
-changeShelfHandler=(book,shelf)=>{
+const changeShelfHandler=(book,shelf)=>{
  
- BooksAPI.update(book,shelf)
- .then(resData=>{
-   this.setState({currentlyReading:[],wantToRead:[],read:[]})
-  this.getAllBooks()
+  BooksAPI.update(book,shelf)
+  .then(resData=>{
 
+    let updatedBooks = books.map(b=>{if(book.id===b.id){
+    let updatedBook = b;
+    updatedBook.shelf = shelf;
+    return updatedBook
+   }
+   else {return b}
+
+  
+   })
+  
+   setBooks(updatedBooks)
   }).catch(err=>{
     console.log(err)
   })
 }
 
-close=()=>{
-  this.props.history.push("/")
+const close=()=>{
+  history.push("/")
 }
 
-  render() {
 
-   
      
     return (  <div className="app">
-          
+       
         <Switch>
-        <Route path='/' exact render={(props)=><Home {...props}    loading={this.state.loading} wantToRead={this.state.wantToRead} currentlyReading={this.state.currentlyReading} read={this.state.read}  changeShelfHandler={this.changeShelfHandler}/>}/>
-          <Route path='/search' render={(props)=> <Search back={this.close} {...props} loading={this.state.loading} wantToRead={this.state.wantToRead} currentlyReading={this.state.currentlyReading} read={this.state.read}  changeShelf={this.changeShelfHandler} books={this.state.searchResult} searchBooks={this.searchBooksHandler}/>}/>
+        <Route path='/' exact render={(props)=><Home {...props}    loading={loading} books={books}  changeShelfHandler={changeShelfHandler}/>}/>
+          <Route path='/search' render={(props)=> <Search back={close} {...props} loading={loading}  addNewBook={addNewBook}  />}/>
        
           </Switch>
       </div>
     )
   }
-}
 
-export default  withRouter(BooksApp)
+
+export default  BooksApp
